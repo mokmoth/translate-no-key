@@ -1,0 +1,25 @@
+.DS_Store
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+secrets/
+private-fixtures/
+
+# User-generated plaintext mappings and private source artifacts
+translate-no-key-mapping-*.json
+AI修改版本
+工具生成脱敏版本
+
+# Logs, dependencies, reports, and archives
+*.log
+node_modules/
+coverage/
+*.bak
+*.tar.gz
+*.tgz
+*.zip

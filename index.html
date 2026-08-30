@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>TranslateNoKey — 配置文件脱敏/还原工具</title>
+  <meta name="description" content="本地运行的配置文件敏感信息辅助脱敏与还原工具">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🔐</span>
+        <h1>TranslateNoKey</h1>
+      </div>
+      <p class="tagline">配置文件脱敏 & 还原 · 所有数据仅在本地浏览器处理</p>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Step 1: Redact -->
+    <section class="step-section" id="step1">
+      <div class="step-header">
+        <span class="step-badge">Step 1</span>
+        <h2>脱敏 — 粘贴原始配置</h2>
+        <p class="step-desc">粘贴包含敏感 Key 的配置内容，工具会自动识别并替换为安全占位符</p>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">📋 原始内容</span>
+            <div class="panel-actions">
+              <button class="btn btn-sm btn-ghost" id="pasteOriginalBtn" title="从剪贴板粘贴">
+                <span class="btn-icon">📋</span> 粘贴
+              </button>
+              <button class="btn btn-sm btn-ghost" id="clearOriginalBtn" title="清空">
+                <span class="btn-icon">🗑️</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="originalInput" placeholder="在此粘贴你的 JSON、YAML、TOML 或 .env 配置文件内容...&#10;&#10;合成示例：&#10;{&#10;  &quot;openai_api_key&quot;: &quot;demo-openai-value&quot;,&#10;  &quot;database_url&quot;: &quot;demo-database-value&quot;,&#10;  &quot;aws_secret_key&quot;: &quot;demo-aws-value&quot;&#10;}" spellcheck="false"></textarea>
+        </div>
+        <div class="arrow-divider">
+          <button class="btn btn-primary btn-redact" id="redactBtn">
+            <span class="btn-icon">🛡️</span> 脱敏
+            <span class="arrow">→</span>
+          </button>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">🛡️ 脱敏结果</span>
+            <div class="panel-actions">
+              <button class="btn btn-sm btn-accent" id="copyRedactedBtn" title="复制脱敏结果" disabled>
+                <span class="btn-icon">📄</span> 复制
+              </button>
+            </div>
+          </div>
+          <textarea id="redactedOutput" placeholder="脱敏结果将显示在这里；人工复核无敏感信息后再发给 AI..." readonly spellcheck="false"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item" id="statRedacted">
+        <span class="stat-icon">🔑</span>
+        <span class="stat-value" id="redactedCount">0</span>
+        <span class="stat-label">个敏感值已脱敏</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-icon">🗂️</span>
+        <span class="stat-value" id="mappingCount">0</span>
+        <span class="stat-label">条映射记录</span>
+      </div>
+      <div class="stat-actions">
+        <button class="btn btn-sm btn-ghost" id="viewMappingBtn" title="查看映射表">
+          <span class="btn-icon">👁️</span> 查看映射
+        </button>
+        <button class="btn btn-sm btn-ghost" id="exportMappingBtn" title="导出映射表">
+          <span class="btn-icon">💾</span> 导出
+        </button>
+        <button class="btn btn-sm btn-ghost" id="importMappingBtn" title="导入映射表">
+          <span class="btn-icon">📂</span> 导入
+        </button>
+        <button class="btn btn-sm btn-danger" id="clearMappingBtn" title="从当前页面内存中清空映射表">
+          <span class="btn-icon">🧹</span> 清空映射
+        </button>
+        <input type="file" id="importFileInput" accept=".json" hidden>
+      </div>
+    </div>
+
+    <aside class="privacy-note" role="note">
+      <strong>重要：</strong>自动检测是 best-effort，复制前请人工复核。映射 JSON 含原始明文敏感值；刷新页面或清空映射后，未导出的映射无法恢复。
+    </aside>
+
+    <!-- Step 2: Restore -->
+    <section class="step-section" id="step2">
+      <div class="step-header">
+        <span class="step-badge">Step 2</span>
+        <h2>还原 — 粘贴 AI 修改后的内容</h2>
+        <p class="step-desc">将 AI 修改后的（含占位符的）内容粘贴到下方，工具会将占位符替换回原始敏感值</p>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">🤖 AI 修改后的内容</span>
+            <div class="panel-actions">
+              <button class="btn btn-sm btn-ghost" id="pasteModifiedBtn" title="从剪贴板粘贴">
+                <span class="btn-icon">📋</span> 粘贴
+              </button>
+              <button class="btn btn-sm btn-ghost" id="clearModifiedBtn" title="清空">
+                <span class="btn-icon">🗑️</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="modifiedInput" placeholder="在此粘贴 AI 返回的修改后内容（含 {{REDACTED_N}} 占位符）..." spellcheck="false"></textarea>
+        </div>
+        <div class="arrow-divider">
+          <button class="btn btn-primary btn-restore" id="restoreBtn">
+            <span class="btn-icon">🔓</span> 还原
+            <span class="arrow">→</span>
+          </button>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">✅ 还原结果</span>
+            <div class="panel-actions">
+              <button class="btn btn-sm btn-accent" id="copyRestoredBtn" title="复制还原结果" disabled>
+                <span class="btn-icon">📄</span> 复制
+              </button>
+            </div>
+          </div>
+          <textarea id="restoredOutput" placeholder="还原后的完整配置将显示在这里，可以粘贴回原位..." readonly spellcheck="false"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Restore stats -->
+    <div class="stats-bar" id="restoreStatsBar" hidden>
+      <div class="stat-item">
+        <span class="stat-icon">✅</span>
+        <span class="stat-value" id="restoredCount">0</span>
+        <span class="stat-label">个值已还原</span>
+      </div>
+      <div class="stat-item" id="unresolvedStat" hidden>
+        <span class="stat-icon">⚠️</span>
+        <span class="stat-value" id="unresolvedCount">0</span>
+        <span class="stat-label">个占位符未能还原</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mapping Modal -->
+  <div class="modal-overlay" id="mappingModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🗺️ 映射表</h3>
+        <button class="btn btn-sm btn-ghost modal-close" id="closeMappingBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="mapping-table" id="mappingTable">
+          <thead>
+            <tr>
+              <th>占位符</th>
+              <th>原始值</th>
+              <th>来源字段</th>
+            </tr>
+          </thead>
+          <tbody id="mappingTableBody"></tbody>
+        </table>
+        <p class="empty-state" id="mappingEmpty">暂无映射记录，请先执行脱敏操作</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <footer class="footer">
+    <p>🔒 工具不发起网络请求，内容仅在当前浏览器页面中处理；请始终人工复核脱敏结果</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

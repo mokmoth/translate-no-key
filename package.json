@@ -1,0 +1,12 @@
+{
+  "name": "translate-no-key",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "check": "node --check app.js && node --test && npm run scan:secrets",
+    "scan:secrets": "node scripts/secret-scan.js",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
